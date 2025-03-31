@@ -22,10 +22,10 @@ A chess app with an integrated LLM bot as a real-time assistant.
 
 # TODO
 
-[x] Build a basic chess UI<br>
-[x] Add LLM Integration<br>
-[ ] Implement Chess moves into LLM Context<br>
-[ ] Implement chess engine support<br>
-[ ] Add position evaluation bar (toggle)<br>
-[ ] Add Player vs AI support<br>
-[ ] Optimize Prompt<br>
+- [x] Build a basic chess UI
+- [x] Add LLM Integration
+- [ ] Implement Chess moves into LLM Context
+- [ ] Implement chess engine support
+- [ ] Add position evaluation bar (toggle)
+- [ ] Add Player vs AI support
+- [ ] Optimize Prompt
