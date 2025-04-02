@@ -29,7 +29,9 @@ if "messages" not in st.session_state:
 if "current_fen" not in st.session_state:
     st.session_state.current_fen = STARTING_FEN # For reference/display
 if "current_history_san" not in st.session_state:
-    st.session_state.current_history_san = [] 
+    st.session_state.current_history_san = []
+if "move_history" not in st.session_state:
+    st.session_state.move_history = []
 
 # --- Helper Functions ---
 def format_moves_for_llm(history_san_list):
@@ -58,6 +60,7 @@ def get_groq_response(user_prompt: str, game_moves_str: str, chat_history: list)
             if '.' in move_san: # Skip move numbers
                 continue
             if move_san:
+                print("F3") # throws error at next line
                 move = board.parse_san(move_san)
                 board.push(move)
         turn_info = "It's Black's turn." if board.turn == chess.BLACK else "It's White's turn."
@@ -395,6 +398,12 @@ def create_chess_app():
                     historyDiv.html(historyHTML); // Use .html() with jQuery
                     historyDiv.scrollTop(historyDiv[0].scrollHeight); // Auto-scroll
                 }
+
+                // Send the move history to Streamlit
+                if (typeof Streamlit !== 'undefined' && Streamlit.setComponentValue) {
+                    console.log("Sending move to Streamlit.");
+                    Streamlit.setComponentValue({'move_history': moveHistory});
+                }
             }
 
             // Reset game function
@@ -474,18 +483,30 @@ def create_chess_app():
         </html>
         """
         # Use scrolling=True temporarily for debugging if content overflows
-        components.html(chess_html, height=700, scrolling=True) # Set scrolling=True for debug
+        components.html(chess_html, height=700, scrolling=True)
 
         # --- Try accessing 'last_move_san' directly from session state ---
         if "last_move_san" in st.session_state:
             last_move = st.session_state["last_move_san"]
+            print("flag2", last_move)
             st.session_state.current_history_san.append(last_move)
-            st.session_state.current_fen = chess.Board(st.session_state.current_fen).fen()
+            try:
+                board = chess.Board(st.session_state.current_fen)
+                board.push_san(last_move)
+                st.session_state.current_fen = board.fen()
+                print("F5", st.session_state.current_fen)
+            except Exception as e:
+                print(f"Error updating FEN: {e}")
             # Remove the key to prevent processing the same move multiple times
             del st.session_state["last_move_san"]
+            # st.rerun() # Explicitly trigger a rerun
 
-        # Debugging: Print the content of the session state
-        print("Session State:", st.session_state)
+        # --- Try accessing 'moveHistory' directly from session state ---
+        if "move_history" in st.session_state:
+            print("F9")
+            move_history = st.session_state["move_history"]
+            # Debugging: Print the content of the session state
+            print("Move History:", move_history)     
 
     # === Column 2: Chat Tutor ===
     with col2:
@@ -508,8 +529,8 @@ def create_chess_app():
                     st.markdown(prompt)
 
             # Prepare data for LLM
-            move_list_str = format_moves_for_llm(st.session_state.current_history_san)
-            print(move_list_str)
+            move_list_str = format_moves_for_llm(st.session_state.move_history)
+            print("flag1", move_list_str)
             history_for_api = [m for m in st.session_state.messages if m["role"] != "system"]
 
             # Display Assistant response within the container
