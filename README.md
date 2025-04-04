@@ -11,21 +11,28 @@ A chess app with an integrated LLM bot as a real-time assistant.
     pip install requirements.txt
     ```
 
-2. Store Groq API Key in `.streamlit/secrets.toml`:
-    ```sh
-    GROQ_API_KEY="gsk_******"
-    ```
+2. Store Groq API Key as environment variable:
+    - Linux:
+        ```sh
+        export GROQ_API_KEY="gsk_******"
+        ```
+    - Windows:
+        ```sh
+        $env:GROQ_API_KEY="gsk_******"
+        ```
 
 3. Run app:
     ```sh
-    streamlit run chessboard_ui.py
+    python chess_tutor.py
     ```
+
+4. Go to `http://127.0.0.1:7860/`
 
 # TODO
 
 - [x] Build a basic chess UI
 - [x] Add LLM Integration
-- [ ] Implement Chess moves into LLM Context
+- [x] Implement Chess moves into LLM Context
 - [ ] Implement chess engine support
 - [ ] Add position evaluation bar (toggle)
 - [ ] Add Player vs AI support
