@@ -1,7 +1,8 @@
 # Chess Tutor Bot
 A chess app with an integrated LLM bot as a real-time assistant.
 
-![](img/Chess%20UI%20Demo%20Screenshot.jpg)
+<!-- ![](img/Chess%20UI%20Demo%20Screenshot.jpg) -->
+![](img/Gradio%20Chess%20UI%20Demo%20Screenshot.jpg)
 
 # Setup and Run
 
