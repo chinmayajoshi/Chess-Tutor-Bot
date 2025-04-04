@@ -504,12 +504,13 @@ with gr.Blocks(css="""
                 interactive=False,
                 lines=10,
                 max_lines=20,
-                elem_classes="history-display" # Apply styling
+                elem_classes="history-display", # Apply styling
+                show_copy_button=True
             )
 
         # --- Right Column: AI Chat ---
         with gr.Column(scale=3):
-            chatbot = gr.Chatbot(label="Chess Tutor AI", height=550) # Increased height
+            chatbot = gr.Chatbot(label="Chess Tutor AI", height=550, show_copy_button=True)
             msg_input = gr.Textbox(
                 label="Ask the AI Tutor",
                 placeholder="e.g., What should I focus on? Why is Nf3 a good move?",
