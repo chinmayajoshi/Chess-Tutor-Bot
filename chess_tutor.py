@@ -9,64 +9,43 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Global variables
 board = chess.Board()
-selected_square = None
 move_history = []
 
 def get_board_svg():
-    """Generate SVG of current board with selected square highlighted"""
-    squares = None
-    if selected_square is not None:
-        squares = chess.SquareSet([selected_square])
-    
+    """Generate SVG of current board with last move highlighted"""
     last_move = None
     if len(board.move_stack) > 0:
         last_move = board.peek()
     
-    return chess.svg.board(board=board, size=400, squares=squares, lastmove=last_move)
+    return chess.svg.board(board=board, size=400, lastmove=last_move)
 
-def handle_click(square_name):
-    """Handle clicks on the chessboard"""
-    global selected_square, board, move_history
+def make_move(from_square, to_square):
+    """Process a chess move"""
+    global board, move_history
     
-    # Invalid square name
-    if not square_name or len(square_name) != 2:
-        return get_board_svg(), "\n".join(move_history), "Invalid square"
+    if not from_square or not to_square:
+        return get_board_svg(), "\n".join(move_history), "Invalid move"
     
     try:
-        clicked_square = chess.parse_square(square_name)
-    except ValueError:
-        return get_board_svg(), "\n".join(move_history), "Invalid square"
-    
-    # First click (select piece)
-    if selected_square is None:
-        piece = board.piece_at(clicked_square)
-        if piece and piece.color == board.turn:
-            selected_square = clicked_square
-            return get_board_svg(), "\n".join(move_history), f"Selected {square_name}"
-        else:
-            return get_board_svg(), "\n".join(move_history), "Select your piece"
-    
-    # Second click (make move)
-    else:
-        from_square = selected_square
-        to_square = clicked_square
+        # Parse square coordinates
+        from_sq = chess.parse_square(from_square)
+        to_sq = chess.parse_square(to_square)
         
-        # Try to make move
-        move = chess.Move(from_square, to_square)
+        # Create move object
+        move = chess.Move(from_sq, to_sq)
         
-        # Handle promotion
-        if (board.piece_type_at(from_square) == chess.PAWN and
-            ((board.turn == chess.WHITE and chess.square_rank(to_square) == 7) or
-             (board.turn == chess.BLACK and chess.square_rank(to_square) == 0))):
+        # Handle promotion (always to queen for simplicity)
+        if (board.piece_type_at(from_sq) == chess.PAWN and
+            ((board.turn == chess.WHITE and chess.square_rank(to_sq) == 7) or
+             (board.turn == chess.BLACK and chess.square_rank(to_sq) == 0))):
             move.promotion = chess.QUEEN
         
         # Make move if legal
         if move in board.legal_moves:
             san_move = board.san(move)
             board.push(move)
-            move_color = "White" if board.turn == chess.BLACK else "Black"  # The color who just moved
+            move_color = "White" if board.turn == chess.BLACK else "Black"
             move_history.append(f"{move_color}: {san_move}")
-            selected_square = None
             
             status = "Check" if board.is_check() else ""
             if board.is_checkmate():
@@ -76,25 +55,24 @@ def handle_click(square_name):
                 
             return get_board_svg(), "\n".join(move_history), status
         else:
-            selected_square = None  # Deselect on illegal move
             return get_board_svg(), "\n".join(move_history), "Illegal move"
+    except Exception as e:
+        return get_board_svg(), "\n".join(move_history), f"Error: {str(e)}"
 
 def new_game():
     """Reset the chess board and history"""
-    global board, move_history, selected_square
+    global board, move_history
     board = chess.Board()
     move_history = []
-    selected_square = None
     return get_board_svg(), "", "New game started"
 
 def undo_move():
     """Undo the last move"""
-    global board, move_history, selected_square
+    global board, move_history
     if board.move_stack:
         board.pop()
         if move_history:
             move_history.pop()
-        selected_square = None
         return get_board_svg(), "\n".join(move_history), "Move undone"
     else:
         return get_board_svg(), "", "No moves to undo"
@@ -144,18 +122,31 @@ Provide thoughtful chess analysis based on the current position.
     return "", chat_history
 
 # Create the Gradio interface
-with gr.Blocks() as app:
+with gr.Blocks(css="""
+    #board { 
+        width: 400px;
+        height: 400px;
+        margin: 0 auto;
+    }
+""") as app:
     gr.Markdown("# Chess Tutor with AI Analysis")
+    
+    # Hidden fields for move coordination
+    from_square = gr.Textbox(visible=False)
+    to_square = gr.Textbox(visible=False)
+    move_trigger = gr.Button("Make Move", visible=False)
     
     with gr.Row():
         # Left column: Chess board
         with gr.Column():
-            # Chess board display
+            # Chess board display (SVG version as fallback)
             board_display = gr.HTML(get_board_svg())
             
-            # Square selection input
-            square_input = gr.Textbox(label="Enter square (e.g., e2, e4)", placeholder="e2")
-            square_btn = gr.Button("Select Square / Make Move")
+            # Temporary solution - square input while JS loads
+            with gr.Row():
+                input_from = gr.Textbox(label="From square (e.g. e2)", max_lines=1)
+                input_to = gr.Textbox(label="To square (e.g. e4)", max_lines=1)
+                submit_move = gr.Button("Move")
             
             # Control buttons
             with gr.Row():
@@ -173,9 +164,23 @@ with gr.Blocks() as app:
             clear_btn = gr.Button("Clear Chat")
     
     # Set up event handlers
-    square_btn.click(handle_click, inputs=[square_input], outputs=[board_display, history_display, status_display])
-    new_game_btn.click(new_game, None, [board_display, history_display, status_display])
-    undo_btn.click(undo_move, None, [board_display, history_display, status_display])
+    submit_move.click(
+        make_move, 
+        inputs=[input_from, input_to], 
+        outputs=[board_display, history_display, status_display]
+    )
+    
+    new_game_btn.click(
+        new_game, 
+        None, 
+        [board_display, history_display, status_display]
+    )
+    
+    undo_btn.click(
+        undo_move, 
+        None, 
+        [board_display, history_display, status_display]
+    )
     
     msg_input.submit(get_ai_analysis, inputs=[msg_input, chatbot], outputs=[msg_input, chatbot])
     clear_btn.click(lambda: ([], []), None, [chatbot, msg_input])
