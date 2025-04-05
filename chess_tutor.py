@@ -337,9 +337,12 @@ def get_ai_analysis(message, chat_history):
     """Gets analysis from Groq AI, including engine context in the prompt."""
     global board, move_history, current_engine_analysis, client
 
+    # Initialize prompt variable in case of early exit
+    system_prompt = "Error: Prompt could not be generated."
+
     if not message.strip():
         print("AI analysis request skipped: Empty message.")
-        return "", chat_history # Return empty input, unchanged history
+        return "", chat_history, gr.no_update()
 
     if not client:
         print("AI analysis failed: Groq client not initialized.")
@@ -347,7 +350,7 @@ def get_ai_analysis(message, chat_history):
         error_msg = "ERROR: AI Service client not available."
         chat_history = chat_history or []
         chat_history.append([message, error_msg])
-        return "", chat_history
+        return "", chat_history, gr.no_update()
 
     # Ensure engine analysis is available
     if not current_engine_analysis or "top_moves" not in current_engine_analysis:
@@ -367,6 +370,11 @@ def get_ai_analysis(message, chat_history):
 
     engine_suggestions_str = "\n".join(engine_suggestions_list)
     engine_best_score_str = current_engine_analysis.get("best_score", "N/A")
+    
+    board_unicode = board.unicode()
+    board_rows = board_unicode.split('\n')
+    ranks = ".....a...b...c...d...e...f...g...h<br>"
+    board_unicode_str = ["|"+ranks] + [f"| {8-i}: {board_rows[i]}<br>" for i in range(len(board_rows))] + ["|"+ranks]
 
     # Prepare system prompt
     turn = "White" if board.turn == chess.WHITE else "Black"
@@ -375,22 +383,26 @@ Your goal is to help the user understand the current chess position resulting fr
 Explain potential threats, opportunities, and general strategic ideas for the player whose turn it is. \
 Avoid just giving the 'best' move. Keep explanations concise for a beginner/intermediate player. \
 Keep your responses to under 200 words, unless the user asks for a longer response.\
-DO NOT TALK about Stockfish and the engine evaluation scores unless users asks specifically.\
+DO NOT TALK about `Stockfish` or `chess engine evaluation scores` unless users asks directly.\
 
-Current Position (FEN):
+### Current Position (FEN):
 {board.fen()}
 
-Move History:
+### Move History:
 {chr(10).join(move_history) if move_history else 'No moves yet.'}
 
-Current Game State:
+### Current Game State:
 - {turn} to move
 - Status: {get_game_status()}
 
-Engine Analysis (Stockfish ~{ANALYSIS_TIME_LIMIT}s - Top 3):
+### Board:<br>
+{"".join(board_unicode_str)}
+
+
+### Engine Analysis (Stockfish ~{ANALYSIS_TIME_LIMIT}s - Top 3):
 - Best Move Score: {engine_best_score_str} (Score relative to White: + favors White, - favors Black. M=Mate)
 - Top 3 Suggested Moves (Score):
-{engine_suggestions_str}
+{engine_suggestions_str})
 
 Based on this context and the user's question below, provide thoughtful chess analysis. Explain key positional elements, threats, potential plans, and the reasoning behind good moves (including why the engine might suggest certain lines). Do not just repeat the engine moves; offer explanations and alternatives.
 """
@@ -437,7 +449,7 @@ Based on this context and the user's question below, provide thoughtful chess an
         chat_history.append([message, error_message])
 
     # Clear the input message box, update the chatbot display
-    return "", chat_history
+    return "", chat_history, system_prompt
 
 
 # --- Gradio Interface Definition ---
@@ -448,7 +460,7 @@ initial_svg, initial_history, initial_status, initial_score = update_ui_state()
 
 with gr.Blocks(css="""
     #board_container {
-        width: 400px; height: 400px; margin: 10px auto; position: relative;
+        width: 400px; height: 400px; margin: 10px auto;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Add subtle shadow */
     }
     #engine_score_display {
@@ -521,6 +533,14 @@ with gr.Blocks(css="""
                 send_btn = gr.Button("Send to AI", variant="secondary")
                 clear_btn = gr.Button("Clear Chat")
 
+            # Accordion to display the system prompt
+            with gr.Accordion("View Current AI System Prompt", open=False):
+                # Using Markdown for better formatting potential
+                system_prompt_display = gr.Markdown(
+                    "System prompt will appear here after the first AI request.",
+                    label="System Prompt Context Sent to AI"
+                )
+
     # --- Event Handlers ---
     # Define outputs updated by board changes (move, undo, new game)
     common_outputs = [board_display, history_display, status_display, score_display]
@@ -552,14 +572,14 @@ with gr.Blocks(css="""
     msg_input.submit(
         get_ai_analysis,
         inputs=[msg_input, chatbot],
-        outputs=[msg_input, chatbot] # Clears input, updates chat
+        outputs=[msg_input, chatbot, system_prompt_display] # Clears input, updates chat
         )
 
     # Handle clicking the "Send to AI" button
     send_btn.click(
         get_ai_analysis,
         inputs=[msg_input, chatbot],
-        outputs=[msg_input, chatbot] # Clears input, updates chat
+        outputs=[msg_input, chatbot, system_prompt_display] # Clears input, updates chat
         )
 
     # Handle clearing the chat
