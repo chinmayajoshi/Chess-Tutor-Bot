@@ -471,7 +471,7 @@ with gr.Blocks(css="""
     #engine_score_display p { margin: 0 !important; padding: 0 !important; }
     .status-text { font-weight: bold; padding: 5px; border-radius: 4px;}
     .move-input input { text-align: center; } /* Center text in move inputs */
-    .history-display textarea { font-family: monospace; font-size: 0.9em; } /* Monospace font for history */
+    .history-display textarea { font-family: monospace; font-size: 0.9em; } 
 """, title="Chess Tutor AI") as app:
 
     gr.Markdown("## Chess Tutor with AI Analysis & Engine Eval")
@@ -520,6 +520,14 @@ with gr.Blocks(css="""
                 show_copy_button=True
             )
 
+            # Accordion to display the system prompt
+            with gr.Accordion("View Current AI System Prompt", open=False):
+                # Using Markdown for better formatting potential
+                system_prompt_display = gr.Markdown(
+                    "System prompt will appear here after the first AI request.",
+                    label="System Prompt Context Sent to AI"
+                )
+
         # --- Right Column: AI Chat ---
         with gr.Column(scale=3):
             chatbot = gr.Chatbot(label="Chess Tutor AI", height=550, show_copy_button=True)
@@ -532,14 +540,6 @@ with gr.Blocks(css="""
             with gr.Row():
                 send_btn = gr.Button("Send to AI", variant="secondary")
                 clear_btn = gr.Button("Clear Chat")
-
-            # Accordion to display the system prompt
-            with gr.Accordion("View Current AI System Prompt", open=False):
-                # Using Markdown for better formatting potential
-                system_prompt_display = gr.Markdown(
-                    "System prompt will appear here after the first AI request.",
-                    label="System Prompt Context Sent to AI"
-                )
 
     # --- Event Handlers ---
     # Define outputs updated by board changes (move, undo, new game)
