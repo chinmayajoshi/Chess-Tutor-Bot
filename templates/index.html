@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Tutor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        .chess-section, .chat-section {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .board-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .move-history {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .chat-interface {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-history {
+            flex-grow: 1;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        #user-message {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .user-bubble, .assistant-bubble {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        .user-bubble {
+            background-color: #e3f2fd;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .assistant-bubble {
+            background-color: #f1f1f1;
+        }
+        .loading {
+            text-align: center;
+            padding: 10px;
+            display: none;
+        }
+        .game-status {
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+        .highlight-square {
+        position: relative;
+        }
+        
+        .highlight-square::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 25%;
+            height: 25%;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            z-index: 1;
+        }
+        
+        .highlight-square-piece {
+            box-shadow: inset 0 0 0 3px rgba(217, 83, 79, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Section: Chess Board -->
+        <div class="chess-section">
+            <h2>Chess Board</h2>
+            <div class="board-container">
+                <div id="board"></div>
+            </div>
+            <div class="game-status" id="game-status"></div>
+            <div class="controls">
+                <button id="new-game">New Game</button>
+                <button id="undo-move">Undo Move</button>
+            </div>
+            <h3>Move History</h3>
+            <div class="move-history" id="move-history"></div>
+        </div>
+        
+        <!-- Right Section: AI Tutor -->
+        <div class="chat-section">
+            <h2>Chess Tutor</h2>
+            <div class="chat-interface">
+                <div class="chat-history" id="chat-history"></div>
+                <div class="loading" id="loading">
+                    <p>Thinking...</p>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="user-message" placeholder="Ask the tutor about your position...">
+                    <button id="send-message">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let board = null;
+        let game = new Chess();
+        
+        // Initialize from server state
+        function initGame() {
+            // If board exists, destroy it first
+            if (board) board.destroy();
+            
+            // Create board with initial position
+            board = Chessboard('board', {
+                position: '{{ board_fen }}',
+                draggable: true,
+                onDragStart: onDragStart,
+                onDrop: onDrop,
+                onSnapEnd: onSnapEnd,
+                pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+                onMouseoverSquare: onMouseoverSquare,
+                onMouseoutSquare: onMouseoutSquare
+            });
+            
+            // Update game object
+            game.load('{{ board_fen }}');
+            
+            // Load move history - fixed by parsing the server-provided data
+            const moveHistory = JSON.parse('{{ move_history|tojson|safe }}');
+            updateMoveHistory(moveHistory);
+            
+            // Load chat history - fixed by parsing the server-provided data
+            const chatHistory = JSON.parse('{{ chat_history|tojson|safe }}');
+            updateChatHistory(chatHistory);
+        }
+        
+        function onDragStart(source, piece) {
+            // Do not pick up pieces if the game is over
+            if (game.game_over()) return false;
+            
+            // Only pick up pieces for the side to move
+            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                return false;
+            }
+        }
+        
+        function onDrop(source, target) {
+            // Make the move on the game object
+            const move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q' // Always promote to a queen for simplicity
+            });
+            
+            // If illegal move, snap back
+            if (move === null) return 'snapback';
+            
+            // Send move to server
+            $.ajax({
+                url: '/make_move',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ source, target }),
+                success: function(response) {
+                    if (response.success) {
+                        // Update board with server's position
+                        board.position(response.fen);
+                        
+                        // Update game object
+                        game.load(response.fen);
+                        
+                        // Add move to history
+                        $('#move-history').append(`<div>${response.move}</div>`);
+                        $('#move-history').scrollTop($('#move-history')[0].scrollHeight);
+                        
+                        // Check for game end
+                        if (response.is_game_over) {
+                            $('#game-status').text(response.game_result);
+                            
+                            // Launch confetti if checkmate
+                            if (response.game_result === 'Checkmate!') {
+                                confetti({
+                                    particleCount: 100,
+                                    spread: 70,
+                                    origin: { y: 0.6 }
+                                });
+                            }
+                        } else if (response.is_check) {
+                            $('#game-status').text('Check!');
+                        } else {
+                            $('#game-status').text('');
+                        }
+                    } else {
+                        // If server rejected move, snap back
+                        board.position(game.fen());
+                    }
+                }
+            });
+        }
+        
+        function onSnapEnd() {
+            // Update the board position after the piece snap animation
+            board.position(game.fen());
+        }
+        
+        function updateMoveHistory(moves) {
+            const $history = $('#move-history');
+            $history.empty();
+            
+            moves.forEach((move, index) => {
+                const isWhiteMove = index % 2 === 0;
+                
+                if (isWhiteMove) {
+                    $history.append(`${move}`);
+                } else {
+                    const $lastMove = $history.children().last();
+                    $lastMove.text($lastMove.text() + ` ${move}`);
+                }
+            });
+            
+            $history.scrollTop($history[0].scrollHeight);
+        }
+        
+        function updateChatHistory(chatHistory) {
+            const $chatHistory = $('#chat-history');
+            $chatHistory.empty();
+            
+            chatHistory.forEach(msg => {
+                const bubbleClass = msg.role === 'user' ? 'user-bubble' : 'assistant-bubble';
+                $chatHistory.append(`<div class="${bubbleClass}">${msg.content}</div>`);
+            });
+            
+            $chatHistory.scrollTop($chatHistory[0].scrollHeight);
+        }
+
+        // Show legal moves when hovering over a piece
+        function onMouseoverSquare(square, piece) {
+            // If no piece on the square or game is over, don't show moves
+            if (!piece || game.game_over()) return;
+            
+            // If it's not the piece's turn, don't show moves
+            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                return;
+            }
+            
+            // Get all legal moves for this square
+            const moves = game.moves({
+                square: square,
+                verbose: true
+            });
+            
+            // Exit if there are no moves
+            if (moves.length === 0) return;
+            
+            // Highlight the square being hovered
+            highlightSquare(square);
+            
+            // Highlight all possible destinations
+            for (let i = 0; i < moves.length; i++) {
+                highlightSquare(moves[i].to);
+            }
+        }
+
+        // Remove highlights when mouse leaves a square
+        function onMouseoutSquare() {
+            removeHighlights();
+        }
+
+        // Add CSS for highlighted squares
+        function highlightSquare(square) {
+            const $square = $('#board .square-' + square);
+            
+            // Add highlight class
+            const highlightClass = 'highlight-square';
+            
+            // Check if the square already has a piece
+            if ($square.hasClass('black-3c85d') || $square.hasClass('white-1e1d7')) {
+                // If it has a piece, use a different highlight
+                $square.addClass(highlightClass + '-piece');
+            } else {
+                // Normal highlight for empty square
+                $square.addClass(highlightClass);
+            }
+        }
+
+        // Remove all highlights
+        function removeHighlights() {
+            $('#board .square-55d63').removeClass('highlight-square highlight-square-piece');
+        }        
+        
+        // New Game button
+        $('#new-game').on('click', function() {
+            $.ajax({
+                url: '/new_game',
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        board.position(response.fen);
+                        game.load(response.fen);
+                        $('#move-history').empty();
+                        $('#game-status').text('');
+                    }
+                }
+            });
+        });
+        
+        // Undo Move button
+        $('#undo-move').on('click', function() {
+            $.ajax({
+                url: '/undo_move',
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        board.position(response.fen);
+                        game.load(response.fen);
+                        updateMoveHistory(response.move_history);
+                        $('#game-status').text('');
+                    }
+                }
+            });
+        });
+        
+        // Send message to tutor
+        $('#send-message').on('click', sendMessage);
+        $('#user-message').on('keypress', function(e) {
+            if (e.which === 13) sendMessage();
+        });
+        
+        function sendMessage() {
+            const message = $('#user-message').val().trim();
+            if (!message) return;
+            
+            // Clear input
+            $('#user-message').val('');
+            
+            // Show loading indicator
+            $('#loading').show();
+            
+            // Add user message to chat immediately
+            $('#chat-history').append(`<div class="user-bubble">${message}</div>`);
+            $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
+            
+            // Send to server
+            $.ajax({
+                url: '/ask_tutor',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ message }),
+                success: function(response) {
+                    // Hide loading indicator
+                    $('#loading').hide();
+                    
+                    if (response.success) {
+                        // Update chat history
+                        updateChatHistory(response.chat_history);
+                    } else {
+                        $('#chat-history').append(`<div class="assistant-bubble">Sorry, I encountered an error: ${response.message}</div>`);
+                        $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
+                    }
+                },
+                error: function() {
+                    // Hide loading indicator
+                    $('#loading').hide();
+                    
+                    $('#chat-history').append(`<div class="assistant-bubble">Sorry, there was a server error. Please try again later.</div>`);
+                    $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
+                }
+            });
+        }
+        
+        // Initialize on page load
+        $(document).ready(function() {
+            initGame();
+        });
+    </script>
+</body>
+</html>
