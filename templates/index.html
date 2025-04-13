@@ -199,7 +199,7 @@
             <div class="chat-prompt">
                 <button type="button" class="collapsible">Show Prompt</button>
                 <div class="system-prompt">
-                    <p>testtest</p>
+                    <p id="system-prompt-text">{{ system_prompt }}</p>
                 </div>
             </div>
         </div>
@@ -341,10 +341,7 @@
 
         // TODO: PRINT SYSTEM PROMPT ON UI
         function updateSystemPrompt(prompt){
-            const $systemPrompt = $('#system-prompt');
-            // $systemPrompt.empty();
-
-            $systemPrompt.append(prompt);
+            $('#system-prompt-text').html(prompt);
         }
 
         // Show legal moves when hovering over a piece

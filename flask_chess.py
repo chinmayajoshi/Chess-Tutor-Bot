@@ -86,11 +86,13 @@ def index():
         session['board_fen'] = chess.Board().fen()
         session['move_history'] = []
         session['chat_history'] = []
+        session['system_prompt'] = "Ask a question to the AI Tutor to generate the system prompt."
     
     return render_template('index.html', 
                           board_fen=session['board_fen'],
                           move_history=session['move_history'],
-                          chat_history=session['chat_history'])
+                          chat_history=session['chat_history'],
+                          system_prompt=session['system_prompt'])
 
 @app.route('/make_move', methods=['POST'])
 def make_move():
@@ -141,11 +143,14 @@ def make_move():
 def new_game():
     session['board_fen'] = chess.Board().fen()
     session['move_history'] = []
+    session['chat_history'] = []
+    session['system_prompt'] = "Ask a question to the AI Tutor to generate the system prompt."
     
     return jsonify({
         'success': True,
         'fen': session['board_fen'],
-        'move_history': session['move_history']
+        'move_history': session['move_history'],
+        'system_prompt': session['system_prompt']
     })
 
 @app.route('/undo_move', methods=['POST'])
@@ -173,7 +178,8 @@ def undo_move():
     return jsonify({
         'success': True,
         'fen': board.fen(),
-        'move_history': move_history
+        'move_history': move_history,
+        'system_prompt': session['system_prompt']
     })
 
 @app.route('/get_game_status', methods=['POST'])
@@ -352,31 +358,34 @@ def ask_tutor():
 Your goal is to help the user understand the current chess position resulting from the game's moves so far. \
 Explain potential threats, opportunities, and general strategic ideas for the player whose turn it is. \
 Avoid just giving the 'best' move. Keep explanations concise for a beginner/intermediate player. \
-Keep your responses to under 200 words, unless the user asks for a longer response.\
+Keep your responses to under 100 words, unless the user asks for a longer response. \
 DO NOT TALK about `Stockfish` or `chess engine evaluation scores` unless users asks directly.\
 
 <br><br>
-### Current Position (FEN):<br>
+# Current Position (FEN):<br>
 {board.fen()}
 
-<br>
-### Move History:<br>
+<br><br>
+# Move History:<br>
 {chr(10).join(move_history) if move_history else 'No moves yet.'}
 
-<br>
-### Current Game State:<br>
+<br><br>
+# Current Game State:<br>
 - {turn} to move
 - Status: {get_game_status(board)}
 
-<br>
-### Board:<br>
+<br><br>
+# Board:<br>
 {"".join(board_unicode_str)}
 
-<br>
-### Engine Analysis (Stockfish ~{ANALYSIS_TIME_LIMIT}s - Top 3):<br>
+<br><br>
+# Chess Engine Analysis (Stockfish ~{ANALYSIS_TIME_LIMIT}s - Top 3):<br>
+- Stockfish Chess Engine gives the BEST MOVES. ALWAYS stick to these moves as recommendations (UNLESS USERS SPECIFIES OHTERWISE).<br>
 - Best Move Score: {engine_best_score_str} (Score relative to White: + favors White, - favors Black. M=Mate)<br>
 - Top 3 Suggested Moves (Score):<br>
-{engine_suggestions_str})<br>
+{engine_suggestions_str})<br><br>
+
+================================<br>
 
 Based on this context and the user's question below, provide thoughtful chess analysis. Explain key positional elements, threats, potential plans, and the reasoning behind good moves (including why the engine might suggest certain lines). Do not just repeat the engine moves; offer explanations and alternatives.
 """
@@ -410,7 +419,8 @@ Based on this context and the user's question below, provide thoughtful chess an
         return jsonify({
             'success': True,
             'response': tutor_response,
-            'chat_history': chat_history
+            'chat_history': chat_history,
+            'system_prompt': session['system_prompt']
         })
     
     except Exception as e:
