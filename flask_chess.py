@@ -424,7 +424,7 @@ Do not just repeat the engine moves; offer explanations and alternatives.
                 {"role": "system", "content": system_prompt},
                 *chat_history
             ],
-            temperature=0.4,
+            temperature=0,
             max_tokens=1024
         )
         
