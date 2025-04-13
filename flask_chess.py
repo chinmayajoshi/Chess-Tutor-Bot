@@ -224,7 +224,6 @@ def get_engine_analysis(current_board):
     global engine, current_engine_analysis
     # Default structure in case of errors or no engine
     analysis_results = {"best_score": "Engine N/A", "top_moves": []}
-    app.logger.info(engine)
 
     if not engine:
         app.logger.info("No engine available, trying to set up engine...")
@@ -239,7 +238,6 @@ def get_engine_analysis(current_board):
         else: app.logger.info("Engine set up successfully.")
 
     try:
-        app.logger.info("F1")
         # Request top 3 variations (MultiPV)
         infos = engine.analyse(
             current_board,
@@ -249,15 +247,12 @@ def get_engine_analysis(current_board):
 
         if not isinstance(infos, list): # Ensure we have a list
             infos = [infos]
-            app.logger.info("F1")
 
         if not infos:
             analysis_results["best_score"] = "No analysis"
             current_engine_analysis = analysis_results
-            app.logger.info("F1")
 
             return current_engine_analysis
-        
 
         processed_moves = []
         for i, info in enumerate(infos):
@@ -297,7 +292,6 @@ def get_engine_analysis(current_board):
             if i == 0: # Set the best score from the top result
                 analysis_results["best_score"] = formatted_score
 
-        app.logger.info("F2", processed_moves)
         analysis_results["top_moves"] = processed_moves
         current_engine_analysis = analysis_results
         return current_engine_analysis
