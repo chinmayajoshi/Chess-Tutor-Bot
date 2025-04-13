@@ -395,7 +395,7 @@ Whenever looking at where a particular piece is, check with this board unicode. 
 
 <br><br>
 # Chess Engine Analysis (Stockfish ~{ANALYSIS_TIME_LIMIT}s - Top 3):<br>
-## Stockfish Chess Engine gives the BEST MOVES. ALWAYS stick to these moves (especially top Line-1 moves) as advice (UNLESS USERS SPECIFIES OHTERWISE).<br>
+## Stockfish Chess Engine gives the BEST MOVES. ALWAYS stick to these moves (especially top Line-1 moves) as advice (UNLESS USERS SPECIFIES OTHERWISE).<br>
 ## Best Move Score: {engine_best_score_str} (Score relative to White: + favors White, - favors Black. M=Mate)<br>
 ## Top 3 BEST MOVE LINES below (Higher Scores are better for white):<br>
 {engine_suggestions_str}<br><br>
