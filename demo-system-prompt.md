@@ -38,7 +38,7 @@ Whenever looking at where a particular piece is, check with this board unicode. 
 - ⭘ = empty square
 
 # Chess Engine Analysis (Stockfish ~0.3s - Top 3):
-## Stockfish Chess Engine gives the BEST MOVES. ALWAYS stick to these moves (especially top Line-1 moves) as advice (UNLESS USERS SPECIFIES OHTERWISE).
+## Stockfish Chess Engine gives the BEST MOVES. ALWAYS stick to these moves (especially top Line-1 moves) as advice (UNLESS USERS SPECIFIES OTHERWISE).
 ## Best Move Score: Stockfish Evaluation: +0.91 (Score relative to White: + favors White, - favors Black. M=Mate)
 ## Top 3 BEST MOVE LINES below (Higher Scores are better for white):
 ### Move Lines 1: hxg5, Nxe5 (Stockfish Evaluation: +0.91)
