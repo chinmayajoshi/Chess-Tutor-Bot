@@ -1,8 +1,22 @@
 # Chess Tutor Bot
-A chess app with an integrated LLM bot as a real-time assistant.
+A chess app with an integrated LLM bot as a real-time assistant tutor.
 
-<!-- ![](img/Chess%20UI%20Demo%20Screenshot.jpg) -->
-![](img/Gradio%20Chess%20UI%20Demo%20Screenshot.jpg)
+![](img/Flask%20Chess%20UI%20Demo%20Screenshot.jpg)
+
+### Unicode Board state for System Prompt:
+| | a | b | c | d | e | f | g | h | |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | ♖ | ♘ | ♗ | ⭘ | ⭘ | ♖ | ♔ | ⭘| 1 |
+| 2 | ♙ | ♙ | ♙ | ♙ | ♕ | ⭘ | ⭘ | ⭘| 2 |
+| 3 | ⭘ | ⭘ | ⭘ | ♗ | ⭘ | ♘ | ♙ | ⭘| 3 |
+| 4 | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ♙| 4 |
+| 5 | ⭘ | ⭘ | ⭘ | ♟ | ♙ | ⭘ | ♟ | ⭘| 5 |
+| 6 | ⭘ | ⭘ | ♟ | ⭘ | ♟ | ⭘ | ⭘ | ♟| 6 |
+| 7 | ♟ | ♟ | ⭘ | ♞ | ⭘ | ⭘ | ♝ | ⭘| 7 |
+| 8 | ♜ | ♞ | ♝ | ♛ | ⭘ | ♜ | ♚ | ⭘| 8 |
+| | a | b | c | d | e | f | g | h | |
+
+Check out the system prompt generated at this board state [here](demo-system-prompt.md).
 
 # Setup and Run
 
@@ -26,10 +40,10 @@ Extract it to `./engine/stockfish/`
 
 4. Run app:
     ```sh
-    python chess_tutor.py
+    python flask_chess.py
     ```
 
-5. Go to `http://127.0.0.1:7860/`
+5. Go to `http://127.0.0.1:5000/`
 
 # TODO
 
@@ -37,8 +51,8 @@ Extract it to `./engine/stockfish/`
 - [x] Add LLM Integration
 - [x] Implement Chess moves into LLM Context
 - [x] Implement chess engine support
-- [x] Add position engine evaluation score
-- [ ] Add drag and drop UI feature
+- [ ] Add position engine evaluation score on UI
+- [x] Add drag and drop UI feature
 - [x] Optimize Prompt
 - [ ] Integrate Langchain for tool-use 
 - [ ] Add `think` toggle feature with reasoning model support
@@ -47,5 +61,5 @@ Extract it to `./engine/stockfish/`
 # Acknowledgement
 
 - [Groq](https://groq.com/) for fast LLM Support!
-- [Gradio](https://www.gradio.app/) for the quick UI setup!
+- [Flask](https://flask.palletsprojects.com/) for the quick UI setup!
 - [Stockfish](https://stockfishchess.org/) for the legendary chess engine!
