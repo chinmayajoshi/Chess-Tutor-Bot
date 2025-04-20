@@ -20,7 +20,7 @@ model_name = "deepseek-r1-distill-llama-70b" # "gemma2-9b-it"
 # --- Configuration ---
 # Set the correct path to your Stockfish executable
 # STOCKFISH_PATH = ".\engine\stockfish\stockfish-windows-x86-64-avx2.exe"
-STOCKFISH_PATH = "./engine/stockfish/stockfish-ubuntu-x86-64-avx2"
+STOCKFISH_PATH = "./engine/stockfish/stockfish/stockfish-ubuntu-x86-64-avx2"
 
 # Time in seconds for engine analysis (adjust as needed)
 ANALYSIS_TIME_LIMIT = 0.3 
