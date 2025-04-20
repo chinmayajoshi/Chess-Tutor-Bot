@@ -91,8 +91,46 @@
             align-self: flex-end;
             margin-left: auto;
         }
+        .think-bubble {
+            font-style: italic;
+            color: #666;
+            border-left: 3px solid #ddd;
+            padding-left: 8px;
+            margin-bottom: 8px;
+        }
+        .main-bubble {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #ddd;
+        }
         .assistant-bubble {
             background-color: #f1f1f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .response-toggle {
+            cursor: pointer;
+            user-select: none;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .toggle-icon {
+            display: inline-block;
+            width: 20px;
+            transition: transform 0.2s;
+        }
+        .reasoning-content {
+            padding: 8px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+        .main-response {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
         .loading {
             text-align: center;
@@ -339,12 +377,45 @@
             $chatHistory.empty();
             
             chatHistory.forEach(msg => {
-                const bubbleClass = msg.role === 'user' ? 'user-bubble' : 'assistant-bubble';
-                $chatHistory.append(`<div class="${bubbleClass}">${msg.content}</div>`);
+                if (msg.role === 'assistant') {
+                    // Assistant message with toggle-able reasoning
+                    $chatHistory.append(`
+                        <div class="assistant-bubble">
+                            <div class="response-toggle">
+                                <span class="toggle-icon">▶</span>
+                                <span class="toggle-text">Show Reasoning</span>
+                            </div>
+                            <div class="reasoning-content" style="display: none;">
+                                ${msg.think || 'No reasoning provided'}
+                            </div>
+                            <div class="main-response">
+                                ${msg.main}
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    // User message remains the same
+                    $chatHistory.append(`<div class="user-bubble">${msg.content}</div>`);
+                }
+            });
+            
+            // Initialize toggle handlers for new elements
+            $('.response-toggle').off('click').on('click', function() {
+                const $content = $(this).next('.reasoning-content');
+                const $icon = $(this).find('.toggle-icon');
+                const $toggleText = $(this).find('.toggle-text');
+                
+                // Add completion callback
+                $content.slideToggle(200, function() { 
+                    const isVisible = $(this).is(':visible');
+                    $icon.text(isVisible ? '▼' : '▶');
+                    $toggleText.text(isVisible ? 'Hide Reasoning' : 'Show Reasoning');
+                });
             });
             
             $chatHistory.scrollTop($chatHistory[0].scrollHeight);
         }
+
 
         function updateSystemPrompt(prompt){
             $('#system-prompt-text').html(prompt);
@@ -475,8 +546,11 @@
             $('#loading').show();
             
             // Add user message to chat immediately
+            // $('#chat-history').append(`<div class="user-bubble">${message}</div>`);
+            // $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
+
+            // Add user message immediately
             $('#chat-history').append(`<div class="user-bubble">${message}</div>`);
-            $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
             
             // Send to server
             $.ajax({
@@ -493,7 +567,7 @@
                         updateChatHistory(response.chat_history);
                         updateSystemPrompt(response.system_prompt);
                     } else {
-                        $('#chat-history').append(`<div class="assistant-bubble">Sorry, I encountered an error: ${response.message}</div>`);
+                        $('#chat-history').append(`<div class="assistant-bubble">❌ Error: ${response.message}</div>`);
                         $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
                     }
                 },
@@ -501,7 +575,7 @@
                     // Hide loading indicator
                     $('#loading').hide();
                     
-                    $('#chat-history').append(`<div class="assistant-bubble">Sorry, there was a server error. Please try again later.</div>`);
+                    $('#chat-history').append(`<div class="assistant-bubble">❌ Connection error</div>`);
                     $('#chat-history').scrollTop($('#chat-history')[0].scrollHeight);
                 }
             });
