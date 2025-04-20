@@ -86,13 +86,15 @@ def index():
         session['board_fen'] = chess.Board().fen()
         session['move_history'] = []
         session['chat_history'] = []
+        session['stockfish_eval'] = get_board_eval(chess.Board(session['board_fen']))
         session['system_prompt'] = "Ask a question to the AI Tutor to generate the system prompt."
     
     return render_template('index.html', 
                           board_fen=session['board_fen'],
                           move_history=session['move_history'],
                           chat_history=session['chat_history'],
-                          system_prompt=session['system_prompt'])
+                          system_prompt=session['system_prompt'],
+                          stockfish_eval=session['stockfish_eval'])
 
 @app.route('/make_move', methods=['POST'])
 def make_move():
@@ -105,37 +107,44 @@ def make_move():
     
     # Create and validate the move
     move = chess.Move.from_uci(f"{source}{target}")
-    
-    if move in board.legal_moves:
-        # Get move in algebraic notation before making the move
-        san_move = board.san(move)
-        
-        # Make the move
-        board.push(move)
-        
-        # Update session
-        session['board_fen'] = board.fen()
-        session['move_history'] = session.get('move_history', []) + [san_move]
-        
-        result = {
-            'success': True,
-            'fen': board.fen(),
-            'move': san_move,
-            'is_game_over': board.is_game_over(),
-            'is_check': board.is_check()
-        }
-        
-        if board.is_game_over():
-            if board.is_checkmate():
-                result['game_result'] = 'Checkmate!'
-            elif board.is_stalemate():
-                result['game_result'] = 'Stalemate!'
-            elif board.is_insufficient_material():
-                result['game_result'] = 'Draw due to insufficient material!'
-            else:
-                result['game_result'] = 'Game over!'
-    else:
-        result = {'success': False, 'message': 'Invalid move'}
+    try:
+        if move in board.legal_moves:
+            # Get move in algebraic notation before making the move
+            san_move = board.san(move)
+            
+            # Make the move
+            board.push(move)
+            
+            # Update session
+            session['board_fen'] = board.fen()
+            session['move_history'] = session.get('move_history', []) + [san_move]
+            
+            result = {
+                'success': True,
+                'fen': board.fen(),
+                'move': san_move,
+                'is_game_over': board.is_game_over(),
+                'is_check': board.is_check()
+            }
+
+            
+            result['stockfish_eval'] = get_board_eval(board)
+            session['stockfish_eval'] = result['stockfish_eval']
+            
+            if board.is_game_over():
+                if board.is_checkmate():
+                    result['game_result'] = 'Checkmate!'
+                elif board.is_stalemate():
+                    result['game_result'] = 'Stalemate!'
+                elif board.is_insufficient_material():
+                    result['game_result'] = 'Draw due to insufficient material!'
+                else:
+                    result['game_result'] = 'Game over!'
+        else:
+            result = {'success': False, 'message': 'Invalid move'}
+    except Exception as e:
+        result = {'success': False, 'message': f'Error making move: {e}'}
+        app.logger.error(f"Error making move: {e}")
     
     return jsonify(result)
 
@@ -150,7 +159,8 @@ def new_game():
         'success': True,
         'fen': session['board_fen'],
         'move_history': session['move_history'],
-        'system_prompt': session['system_prompt']
+        'system_prompt': session['system_prompt'],
+        'stockfish_eval': session['stockfish_eval']
     })
 
 @app.route('/undo_move', methods=['POST'])
@@ -174,12 +184,14 @@ def undo_move():
     # Update session
     session['board_fen'] = board.fen()
     session['move_history'] = move_history
+    session['stockfish_eval'] = get_board_eval(board)
     
     return jsonify({
         'success': True,
         'fen': board.fen(),
         'move_history': move_history,
-        'system_prompt': session['system_prompt']
+        'system_prompt': session['system_prompt'],
+        'stockfish_eval': session['stockfish_eval']
     })
 
 @app.route('/get_game_status', methods=['POST'])
@@ -224,6 +236,42 @@ def format_score(score_obj):
         pawn_units = cp / 100.0
         return f"Stockfish Evaluation: {pawn_units:+.2f}" # Format like +1.23 or -0.50
     
+@app.route('/board_eval_score', methods=['POST'])
+def get_board_eval(current_board):
+    """Analyzes current board position and returns top line engine evaluation."""
+    global engine, current_engine_analysis
+
+    eval_score = "N/A"
+
+    # Engine initialization logic
+    if not engine:
+        app.logger.info("No engine available, trying to set up engine...")
+        initialize_engine()
+        if not engine:
+            app.logger.info("Unable to setup engine.")
+        else: 
+            app.logger.info("Engine set up successfully.")
+
+    try:
+        # Request analysis with Stockfish
+        app.logger.info("Requesting engine analysis...")
+        infos = engine.analyse(
+            current_board,
+            chess.engine.Limit(time=ANALYSIS_TIME_LIMIT),
+            multipv=1  # Get top 1 line
+        )
+
+        if not isinstance(infos, list):
+            infos = [infos]
+
+        app.logger.info(f"Formating score...")
+        eval_score = format_score(infos[0]['score'].white())
+        # eval_score = format_score(infos[0])
+    except Exception as e:
+        app.logger.info(f"Error during engine evaluation: {e}")
+
+    return eval_score
+
 @app.route('/get_engine_analysis', methods=['POST'])
 def get_engine_analysis(current_board):
     """Analyzes current position and returns top 3 lines with up to 4 moves each."""
@@ -409,9 +457,6 @@ For eg. if the top engine suggests a move, is it because it improves the positio
 Do not just repeat the engine moves; offer explanations and alternatives.
 """
 
-    # Save system prompt in session
-    session['system_prompt'] = system_prompt
-
     # Get chat history and add user message
     chat_history = session.get('chat_history', [])
     chat_history.append({"role": "user", "content": user_message})
@@ -433,13 +478,15 @@ Do not just repeat the engine moves; offer explanations and alternatives.
         # Add assistant response to chat history
         chat_history.append({"role": "assistant", "content": tutor_response})
         session['chat_history'] = chat_history
+        
+        # Save system prompt in session
         session['system_prompt'] = system_prompt
         
         return jsonify({
             'success': True,
             'response': tutor_response,
             'chat_history': chat_history,
-            'system_prompt': session['system_prompt']
+            'system_prompt': system_prompt
         })
     
     except Exception as e:
