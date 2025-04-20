@@ -525,5 +525,7 @@ Do not just repeat the engine moves; offer explanations and alternatives.
         })
 
 if __name__ == '__main__':
-    webbrowser.open_new('http://127.0.0.1:2000/')
-    app.run(debug=True, port=2000)
+    # webbrowser.open_new('http://127.0.0.1:2000/')
+    # app.run(debug=True, port=2000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
