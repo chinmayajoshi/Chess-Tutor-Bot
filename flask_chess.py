@@ -14,7 +14,7 @@ app.secret_key = os.urandom(24)  # For session management
 
 # Initialize Groq client - replace with your API key
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-model_name = "llama3-70b-8192" # "llama-3.1-8b-instant"
+model_name = "gemma2-9b-it"
 
 # --- Configuration ---
 # Set the correct path to your Stockfish executable
