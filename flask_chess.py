@@ -20,7 +20,7 @@ model_name = "deepseek-r1-distill-llama-70b" # "gemma2-9b-it"
 # --- Configuration ---
 # Set the correct path to your Stockfish executable
 # STOCKFISH_PATH = ".\engine\stockfish\stockfish-windows-x86-64-avx2.exe"
-STOCKFISH_PATH = ".\engine\stockfish\stockfish-ubuntu-x86-64-avx2"
+STOCKFISH_PATH = "./engine/stockfish/stockfish-ubuntu-x86-64-avx2"
 
 # Time in seconds for engine analysis (adjust as needed)
 ANALYSIS_TIME_LIMIT = 0.3 
@@ -35,6 +35,9 @@ system_prompt = "Send the first message to the AI Tutor to generate system promp
 if not os.path.exists(STOCKFISH_PATH):
     app.logger.info(f"WARNING: Stockfish executable not found at: {STOCKFISH_PATH:<56}")
     app.logger.info("Please install Stockfish and update STOCKFISH_PATH.")
+
+    # TODO: Remove this later
+    print("files in stockfish dir:", os.listdir("./engine/stockfish"))
 
 # --- Engine Initialization & Cleanup ---
 def initialize_engine():
