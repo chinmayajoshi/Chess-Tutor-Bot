@@ -16,7 +16,7 @@ A chess app with an integrated LLM bot as a real-time assistant tutor.
 | 8 | ♜ | ♞ | ♝ | ♛ | ⭘ | ♜ | ♚ | ⭘| 8 |
 | | a | b | c | d | e | f | g | h | |
 
-Reverse Unicode Chessbboard seems to work better for LLM context (as the white pieces are given first to the LLM).<br>
+Reverse Unicode Chessboard seems to work better for LLM context (as the white pieces are given first to the LLM).<br>
 Check out the system prompt generated at this board state [here](demo-system-prompt.md).
 
 # Setup and Run
