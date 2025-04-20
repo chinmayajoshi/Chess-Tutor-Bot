@@ -1,5 +1,6 @@
 # Chess Tutor Bot
-A chess app with an integrated LLM bot as a real-time assistant tutor.
+A chess app with an integrated LLM bot as a real-time assistant tutor. 
+Check out the [deployed app on render here](https://chess-tutor-bot.onrender.com/).
 
 ![](img/Flask%20Chess%20UI%20Demo%20Screenshot.jpg)
 
@@ -21,12 +22,18 @@ Check out the system prompt generated at this board state [here](demo-system-pro
 
 # Setup and Run
 
-1. Install dependencies:
+1. Clone github repo: 
+    ```sh
+    git clone https://github.com/chinmayajoshi/Chess-Tutor-Bot/
+    cd Chess-Tutor-Bot
+    ```
+
+2. Install dependencies:
     ```sh
     pip install requirements.txt
     ```
 
-2. Store Groq API Key as environment variable:
+3. Store Groq API Key as environment variable:
     - Linux:
         ```sh
         export GROQ_API_KEY="gsk_******"
@@ -36,15 +43,15 @@ Check out the system prompt generated at this board state [here](demo-system-pro
         $env:GROQ_API_KEY="gsk_******"
         ```
 
-3. Download stockfish chess engine from [here](https://stockfishchess.org/download/). <br>
+4. Download stockfish chess engine from [here](https://stockfishchess.org/download/).<br>
 Extract it to `./engine/stockfish/` 
 
-4. Run app:
+5. Run app:
     ```sh
     python flask_chess.py
     ```
 
-5. Go to `http://127.0.0.1:5000/`
+6. Open browser and go to `http://0.0.0.0:2000/`
 
 # TODO
 
@@ -61,5 +68,6 @@ Extract it to `./engine/stockfish/`
 # Acknowledgement
 
 - [Groq](https://groq.com/) for fast LLM Support!
-- [Flask](https://flask.palletsprojects.com/) for the quick UI setup!
+- [Flask](https://flask.palletsprojects.com/) for quick UI setup!
 - [Stockfish](https://stockfishchess.org/) for the legendary chess engine!
+- [Render](https://render.com/) for web service deployment!
