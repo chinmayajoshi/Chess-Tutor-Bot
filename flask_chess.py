@@ -7,6 +7,7 @@ import os
 import atexit
 import traceback
 import logging
+import webbrowser
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -18,7 +19,8 @@ model_name = "deepseek-r1-distill-llama-70b" # "gemma2-9b-it"
 
 # --- Configuration ---
 # Set the correct path to your Stockfish executable
-STOCKFISH_PATH = ".\engine\stockfish\stockfish-windows-x86-64-avx2.exe"
+# STOCKFISH_PATH = ".\engine\stockfish\stockfish-windows-x86-64-avx2.exe"
+STOCKFISH_PATH = ".\engine\stockfish\stockfish-ubuntu-x86-64-avx2"
 
 # Time in seconds for engine analysis (adjust as needed)
 ANALYSIS_TIME_LIMIT = 0.3 
@@ -523,4 +525,5 @@ Do not just repeat the engine moves; offer explanations and alternatives.
         })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    webbrowser.open_new('http://127.0.0.1:2000/')
+    app.run(debug=True, port=2000)
