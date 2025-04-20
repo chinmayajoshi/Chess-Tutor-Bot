@@ -319,14 +319,16 @@
             $history.empty();
             
             moves.forEach((move, index) => {
-                const isWhiteMove = index % 2 === 0;
+                $history.append(`${move}<br>`);
+
+                // const isWhiteMove = index % 2 === 0;
                 
-                if (isWhiteMove) {
-                    $history.append(`${move}`);
-                } else {
-                    const $lastMove = $history.children().last();
-                    $lastMove.text($lastMove.text() + `<br>${move}`);
-                }
+                // if (isWhiteMove) {
+                //     $history.append(`${move}`);
+                // } else {
+                //     const $lastMove = $history.children().last();
+                //     $lastMove.text($lastMove.text() + `<br>${move}`);
+                // }
             });
             
             $history.scrollTop($history[0].scrollHeight);
