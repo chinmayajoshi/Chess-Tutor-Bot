@@ -1,3 +1,5 @@
 langchain
 chess
 flask
+streamlit
+gradio
