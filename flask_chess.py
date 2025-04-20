@@ -14,7 +14,7 @@ app.secret_key = os.urandom(24)  # For session management
 
 # Initialize Groq client - replace with your API key
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-model_name = "gemma2-9b-it"
+model_name = "deepseek-r1-distill-llama-70b" # "gemma2-9b-it"
 
 # --- Configuration ---
 # Set the correct path to your Stockfish executable
@@ -462,21 +462,47 @@ Do not just repeat the engine moves; offer explanations and alternatives.
     chat_history.append({"role": "user", "content": user_message})
     
     # Call Groq API
-    try:
+    try:       
+        # Prepare messages for Groq API (without custom fields)
+        api_messages = [{"role": "system", "content": system_prompt}]
+        for msg in chat_history:
+            if msg['role'] == 'user':
+                api_messages.append({"role": "user", "content": msg['content']})
+            else:
+                # For assistants, use the original undivided content
+                api_messages.append({"role": "assistant", "content": msg['content']})
+
+        # Call Groq API
         response = groq_client.chat.completions.create(
-            model=model_name,  # Use appropriate model
-            messages=[
-                {"role": "system", "content": system_prompt},
-                *chat_history
-            ],
+            model=model_name, 
+            messages=api_messages,
             temperature=0,
             max_tokens=1024
         )
         
         tutor_response = response.choices[0].message.content
+        if "<think>" in tutor_response:
+            app.logger.info("1")
+            tutor_response_split = tutor_response.split("<think>")[1].split("</think>")
+            tutor_response_think = tutor_response_split[0]
+            if len(tutor_response_split) > 1:
+                app.logger.info("2")
+                tutor_response_main = tutor_response_split[1]
+            else:
+                app.logger.info("3")
+                tutor_response_main = tutor_response
+        else:
+            app.logger.info("4")
+            tutor_response_think = ""
+            tutor_response_main = tutor_response
         
         # Add assistant response to chat history
-        chat_history.append({"role": "assistant", "content": tutor_response})
+        chat_history.append({
+            "role": "assistant",
+            "content": tutor_response,
+            "think": tutor_response_think,
+            "main": tutor_response_main
+        })
         session['chat_history'] = chat_history
         
         # Save system prompt in session
@@ -484,7 +510,8 @@ Do not just repeat the engine moves; offer explanations and alternatives.
         
         return jsonify({
             'success': True,
-            'response': tutor_response,
+            'reasoning': tutor_response_think,
+            'response': tutor_response_main,
             'chat_history': chat_history,
             'system_prompt': system_prompt
         })
