@@ -178,6 +178,8 @@
                 <button id="new-game">New Game</button>
                 <button id="undo-move">Undo Move</button>
             </div>
+            Show Engine Evaluation: <input type="checkbox" id="myCheck" onclick="toggleEval()">
+            <p id="stockfish-evaluation" style="display:none">{{ stockfish_eval }}</p>
             <h3>Move History</h3>
             <div class="move-history" id="move-history"></div>
         </div>
@@ -273,6 +275,9 @@
                         
                         // Update game object
                         game.load(response.fen);
+
+                        // Update stockfish evaluation
+                        updateEngineScore(response.stockfish_eval);
                         
                         // Add move to history
                         $('#move-history').append(`<div>${response.move}</div>`);
@@ -339,9 +344,26 @@
             $chatHistory.scrollTop($chatHistory[0].scrollHeight);
         }
 
-        // TODO: PRINT SYSTEM PROMPT ON UI
         function updateSystemPrompt(prompt){
             $('#system-prompt-text').html(prompt);
+        }
+
+        function updateEngineScore(score){
+            $('#stockfish-evaluation').html(score);
+        }
+
+        function toggleEval() {
+            // Get the checkbox
+            var checkBox = document.getElementById("myCheck");
+            // Get the output text
+            var text = document.getElementById("stockfish-evaluation");
+
+            // If the checkbox is checked, display the output text
+            if (checkBox.checked == true){
+                text.style.display = "block";
+            } else {
+                text.style.display = "none";
+            }
         }
 
         // Show legal moves when hovering over a piece
@@ -411,6 +433,7 @@
                         game.load(response.fen);
                         $('#move-history').empty();
                         $('#game-status').text('');
+                        $('#stockfish-evaluation').text('Stockfish Evaluation: +0.30');
                     }
                 }
             });
@@ -427,6 +450,7 @@
                         game.load(response.fen);
                         updateMoveHistory(response.move_history);
                         $('#game-status').text('');
+                        updateEngineScore(response.stockfish_eval);
                     }
                 }
             });
