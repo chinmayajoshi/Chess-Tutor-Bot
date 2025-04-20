@@ -6,17 +6,17 @@ A chess app with an integrated LLM bot as a real-time assistant tutor.
 ### Unicode Board state for System Prompt:
 | | a | b | c | d | e | f | g | h | |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | ♖ | ♘ | ♗ | ⭘ | ⭘ | ♖ | ♔ | ⭘| 1 |
-| 2 | ♙ | ♙ | ♙ | ♙ | ♕ | ⭘ | ⭘ | ⭘| 2 |
-| 3 | ⭘ | ⭘ | ⭘ | ♗ | ⭘ | ♘ | ♙ | ⭘| 3 |
-| 4 | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ♙| 4 |
-| 5 | ⭘ | ⭘ | ⭘ | ♟ | ♙ | ⭘ | ♟ | ⭘| 5 |
-| 6 | ⭘ | ⭘ | ♟ | ⭘ | ♟ | ⭘ | ⭘ | ♟| 6 |
-| 7 | ♟ | ♟ | ⭘ | ♞ | ⭘ | ⭘ | ♝ | ⭘| 7 |
-| 8 | ♜ | ♞ | ♝ | ♛ | ⭘ | ♜ | ♚ | ⭘| 8 |
+| 1 | ♖ | ♘ | ♗ | ⭘ | ♔ | ⭘ | ♘ | ♛| 1 |
+| 2 | ♙ | ♙ | ♙ | ♙ | ♕ | ♙ | ⭘ | ♙| 2 |
+| 3 | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ♙ | ⭘| 3 |
+| 4 | ⭘ | ⭘ | ♗ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘| 4 |
+| 5 | ⭘ | ⭘ | ⭘ | ⭘ | ♟ | ⭘ | ⭘ | ⭘| 5 |
+| 6 | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘ | ⭘| 6 |
+| 7 | ♟ | ♟ | ♟ | ♟ | ⭘ | ♟ | ♟ | ♟| 7 |
+| 8 | ♜ | ♞ | ♝ | ⭘ | ♚ | ♝ | ♞ | ♜| 8 |
 | | a | b | c | d | e | f | g | h | |
 
-Reverse Unicode Chessboard seems to work better for LLM context (as the white pieces are given first to the LLM).<br>
+Reverse Unicode Chessboard seems to work better for LLM (as white pieces are given first to the LLM context).<br>
 Check out the system prompt generated at this board state [here](demo-system-prompt.md).
 
 # Setup and Run
@@ -55,7 +55,7 @@ Extract it to `./engine/stockfish/`
 - [x] Add position engine evaluation score toggle on UI
 - [x] Add drag and drop UI feature
 - [x] Optimize Prompt
-- [ ] Add `think` toggle feature with reasoning model support
+- [x] Add `think` feature with reasoning model support
 - [ ] Add Player vs AI support
 
 # Acknowledgement
